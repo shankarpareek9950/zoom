@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Full Screen Zoom</title>
+  <title>Zoom Control</title>
   <style>
     body {
       margin: 0;
@@ -44,7 +44,7 @@
 <body>
 
   <div class="gallery" id="gallery">
-    <img id="zoomImage" src="https://stimg.cardekho.com/images/carexteriorimages/930x620/Audi/Q5-2026/11947/1741688731850/front-left-side-47.jpg" alt="Zoomable Image" />
+    <img id="zoomImage" src="https://placekitten.com/800/600" alt="Zoomable Image" />
   </div>
 
   <script>
@@ -76,6 +76,8 @@
     };
 
     img.addEventListener('touchstart', (e) => {
+      if (!isFullscreen) return;
+
       if (e.touches.length === 2) {
         startDist = getDistance(e.touches);
 
@@ -91,20 +93,22 @@
     });
 
     img.addEventListener('touchmove', (e) => {
-      if (e.touches.length === 2) {
-        e.preventDefault();
-        const newDist = getDistance(e.touches);
-        scale = lastScale * (newDist / startDist);
-        img.style.transform = `scale(${scale})`;
-      }
+      if (!isFullscreen || e.touches.length !== 2) return;
+
+      e.preventDefault();
+      const newDist = getDistance(e.touches);
+      scale = lastScale * (newDist / startDist);
+      scale = Math.max(1, Math.min(scale, 5)); // limit zoom
+      img.style.transform = `scale(${scale})`;
     });
 
     img.addEventListener('touchend', (e) => {
+      if (!isFullscreen) return;
+
       if (e.touches.length < 2) {
         lastScale = scale;
       }
 
-      // Double-tap detection
       const now = new Date().getTime();
       if (now - lastTap < 300) {
         e.preventDefault();
@@ -117,23 +121,18 @@
           img.style.transformOrigin = 'center center';
           img.style.transform = `scale(${scale})`;
         } else {
-          // Toggle zoom
-          scale = scale > 1 ? 1 : 2;
-          lastScale = scale;
+          // Reset everything on second double tap
+          scale = 1;
+          lastScale = 1;
           img.style.transformOrigin = 'center center';
-          img.style.transform = `scale(${scale})`;
+          img.style.transform = `scale(1)`;
+          exitFullscreen();
+          isFullscreen = false;
         }
       }
       lastTap = now;
     });
 
-    // Optional: Exit fullscreen on back tap
-    gallery.addEventListener('click', () => {
-      if (isFullscreen && scale === 1) {
-        exitFullscreen();
-        isFullscreen = false;
-      }
-    });
   </script>
 
 </body>
