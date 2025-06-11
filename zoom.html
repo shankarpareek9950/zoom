@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Zoom Control</title>
+  <title>Fullscreen Zoom Image</title>
   <style>
     body {
       margin: 0;
@@ -44,7 +44,7 @@
 <body>
 
   <div class="gallery" id="gallery">
-    <img id="zoomImage" src="https://placekitten.com/800/600" alt="Zoomable Image" />
+    <img id="zoomImage" src="https://stimg.cardekho.com/images/carexteriorimages/930x620/Maruti/Swift/11947/1697794039150/front-left-side-47.jpg" alt="Zoomable Image" />
   </div>
 
   <script>
@@ -98,7 +98,7 @@
       e.preventDefault();
       const newDist = getDistance(e.touches);
       scale = lastScale * (newDist / startDist);
-      scale = Math.max(1, Math.min(scale, 5)); // limit zoom
+      scale = Math.max(1, Math.min(scale, 5)); // Limit zoom level
       img.style.transform = `scale(${scale})`;
     });
 
@@ -121,7 +121,7 @@
           img.style.transformOrigin = 'center center';
           img.style.transform = `scale(${scale})`;
         } else {
-          // Reset everything on second double tap
+          // Double-tap again: reset zoom and exit fullscreen
           scale = 1;
           lastScale = 1;
           img.style.transformOrigin = 'center center';
@@ -132,7 +132,6 @@
       }
       lastTap = now;
     });
-
   </script>
 
 </body>
