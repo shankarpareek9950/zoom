@@ -3,67 +3,93 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Gallery Zoom</title>
+  <title>Full Screen Zoom</title>
   <style>
     body {
       margin: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
       background: #111;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
     }
 
     .gallery {
       position: relative;
-      overflow: hidden;
       touch-action: none;
     }
 
     img {
+      width: 100%;
       max-width: 100vw;
       max-height: 100vh;
       transition: transform 0.3s ease;
       transform-origin: center center;
     }
+
+    .fullscreen {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: black;
+      z-index: 9999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
   </style>
 </head>
 <body>
 
-  <div class="gallery">
-    <img id="zoomImage" src="https://stimg.cardekho.com/images/carexteriorimages/930x620/Audi/Q5-2026/11947/1741688731850/front-left-side-47.jpg" alt="Zoomable Image" />
+  <div class="gallery" id="gallery">
+    <img id="zoomImage" src="https://placekitten.com/800/600" alt="Zoomable Image" />
   </div>
 
   <script>
     const img = document.getElementById('zoomImage');
-  
+    const gallery = document.getElementById('gallery');
+
     let scale = 1;
     let lastScale = 1;
+    let startDist = 0;
     let originX = 50;
     let originY = 50;
-    let startDist = 0;
-  
+    let isFullscreen = false;
+    let lastTap = 0;
+
     const getDistance = (touches) => {
       const dx = touches[0].clientX - touches[1].clientX;
       const dy = touches[0].clientY - touches[1].clientY;
       return Math.sqrt(dx * dx + dy * dy);
     };
-  
+
+    const enterFullscreen = () => {
+      gallery.classList.add('fullscreen');
+      document.documentElement.requestFullscreen?.();
+    };
+
+    const exitFullscreen = () => {
+      gallery.classList.remove('fullscreen');
+      document.exitFullscreen?.();
+    };
+
     img.addEventListener('touchstart', (e) => {
       if (e.touches.length === 2) {
         startDist = getDistance(e.touches);
-  
+
         const rect = img.getBoundingClientRect();
         const x = (e.touches[0].clientX + e.touches[1].clientX) / 2;
         const y = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-  
+
         originX = ((x - rect.left) / rect.width) * 100;
         originY = ((y - rect.top) / rect.height) * 100;
-  
+
         img.style.transformOrigin = `${originX}% ${originY}%`;
       }
     });
-  
+
     img.addEventListener('touchmove', (e) => {
       if (e.touches.length === 2) {
         e.preventDefault();
@@ -72,28 +98,43 @@
         img.style.transform = `scale(${scale})`;
       }
     });
-  
+
     img.addEventListener('touchend', (e) => {
       if (e.touches.length < 2) {
         lastScale = scale;
       }
-    });
-  
-    // Double-tap zoom toggle
-    let lastTap = 0;
-    img.addEventListener('touchend', (e) => {
+
+      // Double-tap detection
       const now = new Date().getTime();
       if (now - lastTap < 300) {
         e.preventDefault();
-        scale = scale > 1 ? 1 : 2;
-        lastScale = scale;
-        img.style.transformOrigin = `center center`;
-        img.style.transform = `scale(${scale})`;
+
+        if (!isFullscreen) {
+          enterFullscreen();
+          isFullscreen = true;
+          scale = 2;
+          lastScale = scale;
+          img.style.transformOrigin = 'center center';
+          img.style.transform = `scale(${scale})`;
+        } else {
+          // Toggle zoom
+          scale = scale > 1 ? 1 : 2;
+          lastScale = scale;
+          img.style.transformOrigin = 'center center';
+          img.style.transform = `scale(${scale})`;
+        }
       }
       lastTap = now;
     });
+
+    // Optional: Exit fullscreen on back tap
+    gallery.addEventListener('click', () => {
+      if (isFullscreen && scale === 1) {
+        exitFullscreen();
+        isFullscreen = false;
+      }
+    });
   </script>
-  
 
 </body>
 </html>
