@@ -48,10 +48,12 @@
       z-index: 100;
     }
     .zoom-overlay img {
+      position: absolute;
       max-width: 100%;
       max-height: 100%;
       transform-origin: center center;
       will-change: transform;
+      transition: transform 0.05s ease;
     }
   </style>
 </head>
@@ -78,9 +80,10 @@
     const zoomImg = document.getElementById("zoomImg");
 
     let currentIndex = 0;
-    let startX = 0, deltaX = 0;
+    let startX = 0, startY = 0, deltaX = 0;
     let isSwiping = false;
     let scale = 1, lastScale = 1, panX = 0, panY = 0;
+    let originX = 0, originY = 0;
     let pinchStartDist = 0;
     let isPinching = false;
     let lastTap = 0;
@@ -91,7 +94,7 @@
       viewer.style.transform = `translateX(-${currentIndex * 100}vw)`;
     }
 
-    // Double-tap to open zoom overlay
+    // Double-tap to zoom overlay
     images.forEach((img) => {
       img.addEventListener('touchend', (e) => {
         const now = Date.now();
@@ -99,6 +102,7 @@
           zoomImg.src = img.src;
           zoomOverlay.style.display = 'flex';
           zoomImg.style.transform = 'scale(1) translate(0px, 0px)';
+          zoomImg.style.transformOrigin = 'center center';
           scale = 1;
           panX = panY = 0;
           lastScale = 1;
@@ -107,7 +111,6 @@
       });
     });
 
-    // Swipe gallery when not zoomed
     viewer.addEventListener('touchstart', (e) => {
       if (e.touches.length === 1) {
         startX = e.touches[0].clientX;
@@ -132,11 +135,20 @@
       isSwiping = false;
     });
 
-    // Zoom overlay interaction
     zoomOverlay.addEventListener('touchstart', (e) => {
       if (e.touches.length === 2) {
         isPinching = true;
         pinchStartDist = getDistance(e.touches);
+
+        // Set transform origin from pinch center
+        const x = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        const y = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        const bounds = zoomImg.getBoundingClientRect();
+        const offsetX = ((x - bounds.left) / bounds.width) * 100;
+        const offsetY = ((y - bounds.top) / bounds.height) * 100;
+        originX = offsetX;
+        originY = offsetY;
+        zoomImg.style.transformOrigin = `${originX}% ${originY}%`;
       } else if (e.touches.length === 1 && scale > 1) {
         startX = e.touches[0].clientX;
         startY = e.touches[0].clientY;
@@ -154,6 +166,7 @@
         const dy = e.touches[0].clientY - startY;
         panX += dx;
         panY += dy;
+        clampPan();
         applyTransform();
         startX = e.touches[0].clientX;
         startY = e.touches[0].clientY;
@@ -182,10 +195,19 @@
     }
 
     function applyTransform() {
-      const maxPan = 200;
-      const boundedX = Math.max(-maxPan, Math.min(maxPan, panX));
-      const boundedY = Math.max(-maxPan, Math.min(maxPan, panY));
-      zoomImg.style.transform = `scale(${scale}) translate(${boundedX}px, ${boundedY}px)`;
+      zoomImg.style.transform = `scale(${scale}) translate(${panX}px, ${panY}px)`;
+    }
+
+    function clampPan() {
+      const bounds = zoomImg.getBoundingClientRect();
+      const w = bounds.width;
+      const h = bounds.height;
+
+      const maxPanX = Math.max(0, (w - window.innerWidth) / 2);
+      const maxPanY = Math.max(0, (h - window.innerHeight) / 2);
+
+      panX = Math.max(-maxPanX, Math.min(maxPanX, panX));
+      panY = Math.max(-maxPanY, Math.min(maxPanY, panY));
     }
 
     showImage(0);
