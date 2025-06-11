@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Gallery Zoom</title>
+  <title>Mobile Gallery</title>
   <style>
     * {
       box-sizing: border-box;
@@ -19,7 +19,7 @@
     }
     .gallery {
       display: flex;
-      width: 200vw;
+      width: 300vw;
       height: 100vh;
       transition: transform 0.3s ease;
     }
@@ -30,6 +30,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      background: black;
     }
     .image-wrapper img {
       max-width: 100%;
@@ -76,19 +77,23 @@
 
   <script>
     const gallery = document.getElementById("gallery");
-    const images = document.querySelectorAll(".gallery img");
+    const galleryImages = document.querySelectorAll(".gallery img");
     const zoomLayer = document.getElementById("zoomLayer");
     const zoomImg = document.getElementById("zoomImg");
 
+    let currentIndex = 0;
+    let lastTap = 0;
     let scale = 1, lastScale = 1;
     let panX = 0, panY = 0;
     let startX = 0, startY = 0;
     let originX = 0, originY = 0;
     let startDist = 0;
-    let isZoomed = false;
     let isDragging = false;
-    let currentIndex = 0;
-    let lastTap = 0;
+
+    function showImage(index) {
+      currentIndex = Math.max(0, Math.min(index, galleryImages.length - 1));
+      gallery.style.transform = `translateX(-${currentIndex * 100}vw)`;
+    }
 
     function showZoom(imgSrc) {
       zoomImg.src = imgSrc;
@@ -111,12 +116,13 @@
     }
 
     function clampPan() {
-      const imgRect = zoomImg.getBoundingClientRect();
       const vw = window.innerWidth;
       const vh = window.innerHeight;
+      const imgWidth = zoomImg.naturalWidth * scale;
+      const imgHeight = zoomImg.naturalHeight * scale;
 
-      const excessX = Math.max(0, (zoomImg.width * scale - vw) / 2);
-      const excessY = Math.max(0, (zoomImg.height * scale - vh) / 2);
+      const excessX = Math.max(0, (imgWidth - vw) / 2);
+      const excessY = Math.max(0, (imgHeight - vh) / 2);
 
       panX = Math.max(-excessX, Math.min(excessX, panX));
       panY = Math.max(-excessY, Math.min(excessY, panY));
@@ -127,6 +133,7 @@
       zoomImg.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
     }
 
+    // Zoom layer touch logic
     zoomLayer.addEventListener("touchstart", (e) => {
       if (e.touches.length === 2) {
         const rect = zoomImg.getBoundingClientRect();
@@ -165,17 +172,38 @@
       lastTap = now;
     });
 
-    // Handle image tap
-    images.forEach((img, index) => {
+    // Gallery double tap logic
+    galleryImages.forEach((img, index) => {
       img.addEventListener("touchend", (e) => {
         const now = Date.now();
         if (now - lastTap < 300) {
-          currentIndex = index;
           showZoom(img.src);
         }
         lastTap = now;
       });
     });
+
+    // Swipe navigation in gallery
+    let swipeStartX = 0;
+    gallery.addEventListener("touchstart", (e) => {
+      if (e.touches.length === 1) {
+        swipeStartX = e.touches[0].clientX;
+      }
+    });
+
+    gallery.addEventListener("touchend", (e) => {
+      if (e.changedTouches.length === 1) {
+        const deltaX = e.changedTouches[0].clientX - swipeStartX;
+        if (Math.abs(deltaX) > 50) {
+          if (deltaX > 0) showImage(currentIndex - 1);
+          else showImage(currentIndex + 1);
+        } else {
+          showImage(currentIndex);
+        }
+      }
+    });
+
+    showImage(0);
   </script>
 
 </body>
