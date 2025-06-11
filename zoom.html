@@ -196,20 +196,25 @@
 
     function applyTransform() {
       zoomImg.style.transform = `scale(${scale}) translate(${panX}px, ${panY}px)`;
+      
     }
 
     function clampPan() {
-      const imgWidth = zoomImg.naturalWidth * scale;
-      const imgHeight = zoomImg.naturalHeight * scale;
+      const img = zoomImg;
+      const imgWidth = img.naturalWidth * scale;
+      const imgHeight = img.naturalHeight * scale;
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
 
-      const maxX = Math.max(0, (imgWidth - viewportWidth) / 2 / scale);
-      const maxY = Math.max(0, (imgHeight - viewportHeight) / 2 / scale);
+      const scaledImgWidth = img.width * scale;
+      const scaledImgHeight = img.height * scale;
 
-      panX = Math.max(-maxX, Math.min(maxX, panX));
-      panY = Math.max(-maxY, Math.min(maxY, panY));
-    }
+      const overflowX = Math.max(0, (scaledImgWidth - viewportWidth) / 2);
+      const overflowY = Math.max(0, (scaledImgHeight - viewportHeight) / 2);
+
+      panX = Math.max(-overflowX, Math.min(overflowX, panX));
+      panY = Math.max(-overflowY, Math.min(overflowY, panY));
+  }
 
     showImage(0);
   </script>
