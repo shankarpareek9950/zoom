@@ -36,79 +36,64 @@
 
   <script>
     const img = document.getElementById('zoomImage');
-
+  
     let scale = 1;
-    let lastTouchEnd = 0;
-    let lastTap = 0;
+    let lastScale = 1;
+    let originX = 50;
+    let originY = 50;
     let startDist = 0;
-    let pinchCenter = { x: 0, y: 0 };
-    let originSet = false;
-
-    // Handle double-tap
+  
+    const getDistance = (touches) => {
+      const dx = touches[0].clientX - touches[1].clientX;
+      const dy = touches[0].clientY - touches[1].clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    };
+  
+    img.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 2) {
+        startDist = getDistance(e.touches);
+  
+        const rect = img.getBoundingClientRect();
+        const x = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        const y = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+  
+        originX = ((x - rect.left) / rect.width) * 100;
+        originY = ((y - rect.top) / rect.height) * 100;
+  
+        img.style.transformOrigin = `${originX}% ${originY}%`;
+      }
+    });
+  
+    img.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const newDist = getDistance(e.touches);
+        scale = lastScale * (newDist / startDist);
+        img.style.transform = `scale(${scale})`;
+      }
+    });
+  
     img.addEventListener('touchend', (e) => {
-      const now = Date.now();
+      if (e.touches.length < 2) {
+        lastScale = scale;
+      }
+    });
+  
+    // Double-tap zoom toggle
+    let lastTap = 0;
+    img.addEventListener('touchend', (e) => {
+      const now = new Date().getTime();
       if (now - lastTap < 300) {
-        // Double-tap detected
+        e.preventDefault();
         scale = scale > 1 ? 1 : 2;
+        lastScale = scale;
+        img.style.transformOrigin = `center center`;
         img.style.transform = `scale(${scale})`;
       }
       lastTap = now;
     });
-
-    // Handle pinch-to-zoom
-    img.addEventListener('touchmove', (e) => {
-      if (e.touches.length === 2) {
-        e.preventDefault();
-        const dx = e.touches[0].clientX - e.touches[1].clientX;
-        const dy = e.touches[0].clientY - e.touches[1].clientY;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
-        if (!startDist) {
-          startDist = dist;
-          const x = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-          const y = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-          pinchCenter = { x, y };
-
-          // Set transform origin to pinch center
-          const rect = img.getBoundingClientRect();
-          const originX = ((pinchCenter.x - rect.left) / rect.width) * 100;
-          const originY = ((pinchCenter.y - rect.top) / rect.height) * 100;
-          img.style.transformOrigin = `${originX}% ${originY}%`;
-          originSet = true;
-        } else {
-          const newScale = scale * (dist / startDist);
-          img.style.transform = `scale(${newScale})`;
-        }
-      }
-    });
-
-    img.addEventListener('touchend', (e) => {
-      if (e.touches.length < 2) {
-        if (originSet) {
-          const matrix = window.getComputedStyle(img).transform;
-          const match = matrix.match(/matrix\(([^)]+)\)/);
-          if (match) {
-            const values = match[1].split(', ');
-            scale = parseFloat(values[0]);
-          }
-        }
-        startDist = 0;
-        originSet = false;
-      }
-    });
-
-    // Optional: Reset zoom on long press
-    let pressTimer;
-    img.addEventListener('touchstart', (e) => {
-      pressTimer = setTimeout(() => {
-        scale = 1;
-        img.style.transform = `scale(${scale})`;
-        img.style.transformOrigin = 'center center';
-      }, 1000);
-    });
-
-    img.addEventListener('touchend', () => clearTimeout(pressTimer));
   </script>
+  
 
 </body>
 </html>
