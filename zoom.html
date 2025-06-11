@@ -82,7 +82,7 @@
     let currentIndex = 0;
     let startX = 0, startY = 0, deltaX = 0;
     let isSwiping = false;
-    let scale = 1, lastScale = 1, panX = 0, panY = 0;
+    let scale = 2, lastScale = 1, panX = 0, panY = 0;
     let originX = 0, originY = 0;
     let pinchStartDist = 0;
     let isPinching = false;
@@ -199,15 +199,16 @@
     }
 
     function clampPan() {
-      const bounds = zoomImg.getBoundingClientRect();
-      const w = bounds.width;
-      const h = bounds.height;
+      const imgWidth = zoomImg.naturalWidth * scale;
+      const imgHeight = zoomImg.naturalHeight * scale;
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
 
-      const maxPanX = Math.max(0, (w - window.innerWidth) / 2);
-      const maxPanY = Math.max(0, (h - window.innerHeight) / 2);
+      const maxX = Math.max(0, (imgWidth - viewportWidth) / 2 / scale);
+      const maxY = Math.max(0, (imgHeight - viewportHeight) / 2 / scale);
 
-      panX = Math.max(-maxPanX, Math.min(maxPanX, panX));
-      panY = Math.max(-maxPanY, Math.min(maxPanY, panY));
+      panX = Math.max(-maxX, Math.min(maxX, panX));
+      panY = Math.max(-maxY, Math.min(maxY, panY));
     }
 
     showImage(0);
